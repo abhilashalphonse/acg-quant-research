@@ -16,6 +16,10 @@ def read(p):return json.loads(p.read_text())
 def now():return datetime.now(UTC)
 def iso(t):return t.isoformat(timespec='milliseconds').replace('+00:00','Z')
 def stamp(s):return datetime.fromisoformat(s.replace('Z','+00:00')).astimezone(UTC)
+def volume_mounted():
+    root=Path('/data')
+    mount=root if os.name!='nt' and (DATA==root or root in DATA.parents) else DATA
+    return os.path.ismount(mount)
 def append(p,row):
     with p.open('a',encoding='utf-8') as f:
         f.write(json.dumps(row,allow_nan=False)+'\n');f.flush();os.fsync(f.fileno())
@@ -162,7 +166,7 @@ def once():
         atomic(DATA/'heartbeat.json',dict(observedAt=iso(t),status='success',latest5mClose=bars[-1].end.isoformat(),latest1mClose=fine[-1].end.isoformat(),companion=companion))
         print(json.dumps(dict(status='success',observedAt=iso(t),result=result,companion=companion,
             latest5mClose=bars[-1].end.isoformat(),latest1mClose=fine[-1].end.isoformat(),fetch=fetch,
-            volumeMounted=os.path.ismount(DATA),storageIdentity=read(DATA/'storage_identity.json'),
+            volumeMounted=volume_mounted(),storageIdentity=read(DATA/'storage_identity.json'),
             observationLedgerBytes=(folder/'candle_observations.jsonl').stat().st_size,
             readinessEstablished=ready.exists())),flush=True)
     except Exception as exc:
@@ -175,7 +179,7 @@ def main():
     if not args.once and not args.serve:verify();print('Frozen cloud inputs verified; no collection started');return
     if args.once:once();return
     if os.environ.get('ACG_CONTINUOUS_CAPTURE')!='ENABLED':raise ValueError('Continuous mode requires explicit activation flag')
-    if str(DATA)=='/data' and not os.path.ismount(DATA):raise ValueError('Persistent /data volume is not mounted')
+    if not volume_mounted():raise ValueError('Persistent data volume is not mounted')
     verify()
     while True:
         from accept01_engine import session

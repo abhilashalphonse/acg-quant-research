@@ -69,4 +69,12 @@ class CloudTests(TestCase):
             with self.assertRaises(c.ProviderFailure) as error:c.request('1m',T,T+timedelta(minutes=1),'SENSITIVE_TEST_VALUE')
         self.assertNotIn('SENSITIVE_TEST_VALUE',str(error.exception));self.assertNotIn('https://',str(error.exception))
 
+    def test_separate_namespace_preserves_volume_root_contents(self):
+        with TemporaryDirectory() as d:
+            volume=Path(d);(volume/'filesystem_metadata').write_text('preserve')
+            data=volume/'acg-quant-research'
+            with patch.object(c,'DATA',data):c.initialize({});c.initialize({})
+            self.assertEqual((volume/'filesystem_metadata').read_text(),'preserve')
+            self.assertTrue((data/'storage_identity.json').exists())
+
 if __name__=='__main__':main(verbosity=2)
