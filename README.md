@@ -1,17 +1,55 @@
-# ACG sealed collector � deployment candidate
+ACG Quant Research
+Systematic market research · Quantitative strategy development · Evidence-first validation
 
-This candidate imports byte-identical sealed ACCEPT and STATE engines. The additional Python adapter changes only file bindings, transport and operational supervision. It is not the original Windows launcher, and it must not be presented as byte-identical launcher execution.
+ACG Quant Research is an independent research initiative focused on understanding market behavior, designing testable trading hypotheses, and evaluating whether those hypotheses survive realistic execution costs and out-of-sample scrutiny.
 
-Required configuration: a new isolated worker service, one replica, persistent volume mounted at /data, TWELVE_DATA_API_KEY secret, and explicit ACG_CONTINUOUS_CAPTURE=ENABLED. No public domain is required. The data-provider key is never shipped here. Existing MongoDB or broker credentials are neither needed nor used.
+The project brings market-structure concepts—including breaks of structure (BOS), market structure shifts (MSS), fair value gaps (FVG), and liquidity behavior—into a reproducible quantitative workflow. Its objective is not to find a visually convincing setup, but to distinguish measurable, repeatable evidence from hindsight, overfitting, and execution assumptions.
+Research status: Experimental. Historical analyses and frozen prospective protocols are included. No strategy in this repository should be interpreted as a verified live-trading edge, and this repository does not place broker orders.
 
-Before activation build the container, verify all tests, mount the volume and confirm the required data-provider quota. Running the adapter without --once/--serve only verifies integrity. --once performs one capture. --serve requires the activation flag and refuses an unmounted Linux /data. It polls at 30-second UTC slots during the configured research session, approximately four time-series requests per minute after initial catch-up. Catch-up can use extra pages. This is an ongoing provider and hosting workload.
+Research philosophy
+The core question is simple:
 
-Every run validates sealed code and baseline archives. Persistent storage uses first-seen market observations as its authoritative record, logs revisions without applying them, and recovers caches after interrupted writes. Original protocol documents are copied unchanged. Windows baseline filenames are explicitly rebound to the identical bundled archives; stored JSON is never rewritten. The STATE source/output directory bindings point at the same volume.
+Can a precisely defined market hypothesis produce a measurable advantage after data limitations, execution assumptions, statistical uncertainty, and independent evaluation are accounted for?
 
-Market failures are recorded and retried at the next slot. Integrity or consistency failures stop the process. A stale collection.lock after abrupt termination requires audit rather than automatic removal. Heartbeat, fetch results, failure records, signal decisions, outcomes and companion records are stored on the volume. A running service is not proof of timely observations or broker fills.
+We approach that question through a repeatable research cycle:
+1. Observe — collect and validate historical or prospectively observed market data.
+2. Specify — turn qualitative market ideas into unambiguous, timestamped rules.
+3. Replay — test candidate signals and trade paths with explicit position, exit, and cost assumptions.
+4. Freeze — version the strategy, dataset, analysis plan, and code before independent testing.
+5. Observe prospectively — preserve first-seen evidence, timestamps, missing data, and revisions.
+6. Evaluate — report outcomes, uncertainty, stress sensitivity, exposure, and failure cases.
+7. Decide — retain, revise in a new version, or reject a hypothesis without rewriting its historical record.
+Current research areas
+Area	Research question	Current treatment
+Market structure	Can BOS, MSS, FVG, and liquidity events be identified with consistent, non-anticipatory rules?	Historical detectors and exploratory replays
+Entry timing	Does waiting for a defined post-BOS acceptance condition improve outcomes relative to immediate entry?	Frozen ACG-ACCEPT-01 comparison
+Market state	Do prespecified price-path features add information beyond an acceptance-only baseline?	Frozen observational ACG-STATE-01 companion
+Execution	How sensitive are results to spread, slippage, session exclusions, entry timing, and data gaps?	Explicit central/stress proxy assumptions
+Trade-path and exits	How do stop placement, holding time, and exit policy influence realized R and risk exposure?	Ongoing research direction; not a demonstrated edge
 
-The planned boundary is 2026-11-16T00:00:00Z. This new storage must establish its own fresh in-session readiness before then. No local readiness marker or previous live ledger is included. If that requirement fails, a separately versioned future boundary is needed. Operational uptime and actual timeliness must still be checked before treating the cohort as valid.
+Market data (Twelve Data proxy)
+                |
+                v
+       OHLC validation / UTC alignment
+                |
+                v
+    Historical datasets + first-seen ledger
+                |
+                v
+       Frozen detectors and protocols
+                |
+        +-------+-------+
+        |               |
+        v               v
+  ACCEPT-01         STATE-01
+ Policy comparison  State observation
+        |               |
+        +-------+-------+
+                |
+                v
+  Auditable outcomes, limitations,
+  uncertainty and future decisions
 
-This package contains no order-placement capability. The sealed engines simulate both central and stress proxy execution. No Bybit quotes are supplied. Parent formal review criteria and STATE training/evaluation design remain those of the sealed protocols. Periodic analysis/report generation is a separate milestone.
 
-Local validation used Windows Python 3.14. Linux Python 3.12 container build/startup is a required cloud validation step, not an already observed success.
+
+  
